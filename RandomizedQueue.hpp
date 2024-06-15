@@ -79,13 +79,17 @@ public:
         m_data.push_back(item);
     }
 
+    void enqueue(value_type&& item) {
+        m_data.push_back(std::move(item));
+    }
+
     value_type dequeue() {
         if (empty()) {
             throw std::out_of_range("Queue is empty");
         }
         std::uniform_int_distribution<> dist(0, m_data.size() - 1);
         int idx = dist(m_gen);
-        T item = m_data[idx];
+        value_type item = std::move(m_data[idx]);
         std::swap(m_data[idx], m_data.back());
         m_data.pop_back();
         return item;
@@ -101,6 +105,11 @@ public:
 
     RandomizedQueue &operator+=(const_reference item) {
         enqueue(item);
+        return *this;
+    }
+
+    RandomizedQueue &operator+=(value_type&& item) {
+        enqueue(std::move(item));
         return *this;
     }
 
