@@ -16,20 +16,17 @@ class RandomizedQueue {
     using pointer = value_type*;
     using const_pointer = const value_type*;
 
-    template <bool IsConst>
-    class iterator_impl {
-        using queue_type = std::conditional_t<IsConst, const RandomizedQueue, RandomizedQueue>;
-        using ref_type = std::conditional_t<IsConst, const_reference, reference>;
-        using ptr_type = std::conditional_t<IsConst, const_pointer, pointer>;
+    class iterator {
     public:
         using iterator_category = std::forward_iterator_tag;
         using value_type = T;
         using difference_type = std::ptrdiff_t;
-        using pointer = ptr_type;
-        using reference = ref_type;
+        using reference = value_type&;
+        using pointer = value_type*;
 
-        iterator_impl() : m_queue(nullptr), m_pos(0) {}
-        iterator_impl(queue_type* queue, size_type pos) : m_queue(queue), m_pos(pos) {
+
+        iterator() : m_queue(nullptr), m_pos(0) {}
+        iterator(RandomizedQueue* queue, size_type pos) : m_queue(queue), m_pos(pos) {
             if (queue) {
                 m_permuted_indices = queue->get_permuted_indexes();
             }
@@ -43,35 +40,78 @@ class RandomizedQueue {
             return &m_queue->m_data[m_permuted_indices[m_pos]];
         }
 
-        iterator_impl& operator++() {
+        iterator& operator++() {
             ++m_pos;
             return *this;
         }
 
-        iterator_impl operator++(int) {
-            iterator_impl temp = *this;
+        iterator operator++(int) {
+            iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        bool operator==(const iterator_impl& other) const {
+        bool operator==(const iterator& other) const {
             return m_queue == other.m_queue && m_pos == other.m_pos;
         }
 
-        bool operator!=(const iterator_impl& other) const {
+        bool operator!=(const iterator& other) const {
             return !(*this == other);
         }
 
     private:
-        queue_type* m_queue;
+        RandomizedQueue* m_queue;
+        size_type m_pos;
+        std::vector<size_type> m_permuted_indices;
+    };
+
+    class const_iterator {
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+
+        const_iterator() : m_queue(nullptr), m_pos(0) {}
+        const_iterator(const RandomizedQueue* queue, size_type pos) : m_queue(queue), m_pos(pos) {
+            if (queue) {
+                m_permuted_indices = queue->get_permuted_indexes();
+            }
+        }
+
+        const_reference operator*() const {
+            return m_queue->m_data[m_permuted_indices[m_pos]];
+        }
+
+        const_pointer operator->() const {
+            return &m_queue->m_data[m_permuted_indices[m_pos]];
+        }
+
+        const_iterator& operator++() {
+            ++m_pos;
+            return *this;
+        }
+
+        const_iterator operator++(int) {
+            iterator temp = *this;
+            ++(*this);
+            return temp;
+        }
+
+        bool operator==(const const_iterator& other) const {
+            return m_queue == other.m_queue && m_pos == other.m_pos;
+        }
+
+        bool operator!=(const const_iterator& other) const {
+            return !(*this == other);
+        }
+
+    private:
+        const RandomizedQueue* m_queue;
         size_type m_pos;
         std::vector<size_type> m_permuted_indices;
     };
 
 public:
-    using iterator = iterator_impl<false>;
-    using const_iterator = iterator_impl<true>;
-
     RandomizedQueue() : m_gen(std::random_device{}()) {}
 
     bool empty() const noexcept {
