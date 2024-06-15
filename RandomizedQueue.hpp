@@ -95,7 +95,15 @@ public:
         return item;
     }
 
-    value_type sample() const {
+    reference sample() {
+        if (empty()) {
+            throw std::out_of_range("Queue is empty");
+        }
+        std::uniform_int_distribution<> dist(0, m_data.size() - 1);
+        return m_data[dist(m_gen)];
+    }
+
+    const_reference sample() const {
         if (empty()) {
             throw std::out_of_range("Queue is empty");
         }
