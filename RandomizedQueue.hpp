@@ -14,33 +14,29 @@ class RandomizedQueue {
     using reference = value_type &;
     using const_reference = const value_type &;
     using pointer = value_type *;
-    using iterator_category = std::forward_iterator_tag;
+    using const_pointer = const value_type *;
 
     class iterator {
     public:
-        iterator() : m_queue(nullptr), m_pos(0) {};
-        iterator(const RandomizedQueue *queue, size_type pos) : m_queue(queue), m_pos(pos) {
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
+
+        iterator() : m_queue(nullptr), m_pos(0) {}
+        iterator(const RandomizedQueue* queue, size_type pos) : m_queue(queue), m_pos(pos) {
             if (queue) {
                 m_permuted_indices = queue->get_permuted_indexes();
             }
         }
 
-        const value_type &operator*() {
-            return m_queue->m_data[m_permuted_indices[m_pos]];
+        reference operator*() const {
+            return const_cast<reference>(m_queue->m_data[m_permuted_indices[m_pos]]);
         }
 
-        const value_type *operator->() {
-            return &m_queue->m_data[m_permuted_indices[m_pos]];
-        }
-
-        iterator& operator+=(const value_type &value) {
-            m_queue->m_data[m_permuted_indices[m_pos]] += value;
-            return *this;
-        }
-
-        iterator& operator*= (difference_type n) {
-            m_pos *= n;
-            return *this;
+        pointer operator->() const {
+            return const_cast<pointer>(&m_queue->m_data[m_permuted_indices[m_pos]]);
         }
 
         iterator &operator++() {
@@ -63,11 +59,10 @@ class RandomizedQueue {
         }
 
     private:
-        const RandomizedQueue *m_queue;
+        const RandomizedQueue* m_queue;
         size_type m_pos;
         std::vector<size_type> m_permuted_indices;
     };
-
 
 public:
     RandomizedQueue() : m_gen(std::random_device{}()) {}
@@ -104,46 +99,25 @@ public:
         return m_data[dist(m_gen)];
     }
 
-    RandomizedQueue& operator+=(const_reference item) {
+    RandomizedQueue &operator+=(const_reference item) {
         enqueue(item);
         return *this;
     }
 
-    iterator begin() const noexcept;
-    iterator end() const noexcept;
-    iterator cbegin() const noexcept;
-    iterator cend() const noexcept;
+    iterator begin() const noexcept { return iterator(this, 0); }
+    iterator end() const noexcept { return iterator(this, m_data.size()); }
+    iterator cbegin() const noexcept { return iterator(const_cast<RandomizedQueue*>(this), 0); }
+    iterator cend() const noexcept { return iterator(const_cast<RandomizedQueue*>(this), m_data.size()); }
+
 
 private:
-    std::vector<size_type> get_permuted_indexes() const noexcept;
+    std::vector<size_type> get_permuted_indexes() const noexcept {
+        std::vector<size_type> indexes(m_data.size());
+        std::iota(indexes.begin(), indexes.end(), 0);
+        std::shuffle(indexes.begin(), indexes.end(), m_gen);
+        return indexes;
+    }
+
     std::vector<value_type> m_data;
     mutable std::mt19937 m_gen;
 };
-
-template<typename T>
-std::vector<size_t> RandomizedQueue<T>::get_permuted_indexes() const noexcept {
-    std::vector<size_t> indexes(m_data.size());
-    std::iota(indexes.begin(), indexes.end(), 0);
-    std::shuffle(indexes.begin(), indexes.end(), m_gen);
-    return indexes;
-}
-
-template<typename T>
-typename RandomizedQueue<T>::iterator RandomizedQueue<T>::begin() const noexcept {
-    return iterator(this, 0);
-}
-
-template<typename T>
-typename RandomizedQueue<T>::iterator RandomizedQueue<T>::end() const noexcept {
-    return iterator(this, m_data.size());
-}
-
-template<typename T>
-typename RandomizedQueue<T>::iterator RandomizedQueue<T>::cbegin() const noexcept {
-    return iterator(this, 0);
-}
-
-template<typename T>
-typename RandomizedQueue<T>::iterator RandomizedQueue<T>::cend() const noexcept {
-    return iterator(this, m_data.size());
-}
